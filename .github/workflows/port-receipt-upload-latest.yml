@@ -17,15 +17,276 @@ jobs:
         with:
           fetch-depth: 0
       - name: Apply custom features to current upstream
+        shell: bash
         run: |
+          set -e
           git remote add upstream https://github.com/actualbudget/actual.git
           git fetch upstream master
           git fetch origin puh/receipt-upload
           git checkout --force -B port-upstream upstream/master
           git diff --binary 2bebdbaae0b701120a8cad9d56aafd64fa04c577 origin/puh/receipt-upload > "$RUNNER_TEMP/puh-custom.patch"
-          git apply --3way --index "$RUNNER_TEMP/puh-custom.patch"
-          git diff --cached --check
+          if ! git apply --3way --index "$RUNNER_TEMP/puh-custom.patch"; then
+            echo "Resolving upstream UI conflicts by keeping current Actual files."
+            while IFS= read -r file; do
+              git checkout --ours -- "$file"
+            done < <(git diff --name-only --diff-filter=U)
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def edit(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected code anchor not found in {path}: {old[:90]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          edit(
+              "packages/desktop-client/src/modals/modalsSlice.ts",
+              "  | {\n      name: 'import-transactions';",
+              """  | {
+                  name: 'transaction-receipts';
+                  options: {
+                    transactionId: string;
+                    initialFiles?: globalThis.File[];
+                    onClose?: () => void;
+                  };
+                }
+                | {
+                    name: 'import-transactions';""",
+          )
+
+          edit(
+              "packages/desktop-client/src/components/mobile/transactions/TransactionList.tsx",
+              "import { FloatingActionBar } from '#components/mobile/FloatingActionBar';",
+              """import { FloatingActionBar } from '#components/mobile/FloatingActionBar';
+          import { ReceiptStatusProvider } from '#components/transactions/ReceiptStatus';""",
+          )
+          edit(
+              "packages/desktop-client/src/components/mobile/transactions/TransactionList.tsx",
+              "  return (\n    <View style={{ flex: 1 }}>",
+              "  return (\n    <ReceiptStatusProvider>\n      <View style={{ flex: 1 }}>",
+          )
+          edit(
+              "packages/desktop-client/src/components/mobile/transactions/TransactionList.tsx",
+              "    </View>\n  );\n}\n\ntype SelectedTransactionsFloatingActionBarProps",
+              "      </View>\n    </ReceiptStatusProvider>\n  );\n}\n\ntype SelectedTransactionsFloatingActionBarProps",
+          )
+
+          table = "packages/desktop-client/src/components/transactions/TransactionsTable.tsx"
+          edit(
+              table,
+              "import {\n  isTransactionTableColumnAvailableInChildRows,",
+              """import {
+            ReceiptStatusProvider,
+            TransactionReceiptStatus,
+          } from './ReceiptStatus';
+          import {
+            isTransactionTableColumnAvailableInChildRows,""",
+          )
+          start = Path(table).read_text()
+          hstart = start.index("const TransactionHeader = memo(")
+          hend = start.index("TransactionHeader.displayName", hstart)
+          header = start[hstart:hend]
+          needle = "        })}\n      </Row>"
+          if needle not in header:
+              raise SystemExit("Receipt header insertion point not found")
+          header = header.replace(
+              needle,
+              """        })}
+                  <Field style={{ width: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
+                    <Trans i18nKey="Receipt column">Beleg</Trans>
+                  </Field>
+                </Row>""",
+              1,
+          )
+          start = start[:hstart] + header + start[hend:]
+          tstart = start.index("const Transaction = memo(function Transaction(")
+          cell = start.index("        <Cell width={5} />", tstart)
+          receipt_cell = """        <Field style={{ width: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
+                  <TransactionReceiptStatus transaction={transaction} />
+                </Field>
+                """
+          start = start[:cell] + receipt_cell + start[cell:]
+          start = start.replace(
+              "    return (\n      <DisplayPayeeProvider",
+              "    return (\n      <ReceiptStatusProvider>\n        <DisplayPayeeProvider",
+              1,
+          )
+          start = start.replace(
+              "        </SchedulesProvider>\n      </DisplayPayeeProvider>",
+              "        </SchedulesProvider>\n        </DisplayPayeeProvider>\n      </ReceiptStatusProvider>",
+              1,
+          )
+          Path(table).write_text(start)
+
+          tx = "packages/desktop-client/src/components/mobile/transactions/TransactionEdit.tsx"
+          edit(
+              tx,
+              "import { MobilePageHeader, Page } from '#components/Page';",
+              """import { MobilePageHeader, Page } from '#components/Page';
+          import { DraftReceiptPicker } from '#components/transactions/DraftReceiptPicker';""",
+          )
+          edit(
+              tx,
+              "  onSave: (transactions: TransactionEntity[]) => void;",
+              "  onSave: (transactions: TransactionEntity[]) => Promise<void>;",
+          )
+          edit(
+              tx,
+              "    const dispatch = useDispatch();",
+              """    const dispatch = useDispatch();
+              const [draftReceipts, setDraftReceipts] = useState<File[]>([]);
+              const saving = useRef(false);
+              const saved = useRef(false);""",
+          )
+          p = Path(tx)
+          text = p.read_text()
+          start = text.index("    const onSaveInner = useCallback(async () => {")
+          end = text.index("\n\n    const onSchedule = useCallback", start)
+          save = """    const onSaveInner = useCallback(async () => {
+                const onConfirmSave = async () => {
+                  if (saving.current) return;
+                  saving.current = true;
+                  try {
+                    let transactionsToSave = unserializedTransactions;
+                    if (isAdding) {
+                      transactionsToSave = realizeTempTransactions(unserializedTransactions);
+                    }
+                    await onSave(transactionsToSave);
+                    saved.current = true;
+                    const firstTransaction = transactionsToSave[0];
+                    if (draftReceipts.length > 0 && firstTransaction) {
+                      dispatch(
+                        pushModal({
+                          modal: {
+                            name: 'transaction-receipts',
+                            options: {
+                              transactionId: firstTransaction.parent_id || firstTransaction.id,
+                              initialFiles: draftReceipts,
+                              onClose: () => void navigate(-1),
+                            },
+                          },
+                        }),
+                      );
+                    } else {
+                      void navigate(-1);
+                    }
+                  } catch {
+                    dispatch(
+                      addNotification({
+                        notification: {
+                          type: 'error',
+                          message: t('The transaction could not be saved. Please try again.', {
+                            defaultValue: 'Die Buchung konnte nicht gespeichert werden. Bitte versuche es erneut.',
+                          }),
+                        },
+                      }),
+                    );
+                  } finally {
+                    if (!saved.current) saving.current = false;
+                  }
+                };
+
+                if (unserializedTransactions.some(t => t.reconciled)) {
+                  dispatch(
+                    pushModal({
+                      modal: {
+                        name: 'confirm-transaction-edit',
+                        options: {
+                          onConfirm: () => void onConfirmSave(),
+                          confirmReason: 'editReconciled',
+                        },
+                      },
+                    }),
+                  );
+                  return;
+                }
+
+                const transferIds = unserializedTransactions
+                  .map(t => t.transfer_id)
+                  .filter((id): id is string => id != null);
+                if (transferIds.length > 0) {
+                  const { data } = await aqlQuery(
+                    q('transactions')
+                      .filter({
+                        id: { $oneof: transferIds },
+                        reconciled: true,
+                      })
+                      .select('id'),
+                  );
+                  if ((data as TransactionEntity[]).length > 0) {
+                    dispatch(
+                      pushModal({
+                        modal: {
+                          name: 'confirm-transaction-edit',
+                          options: {
+                            onConfirm: () => void onConfirmSave(),
+                            confirmReason: 'batchEditWithReconciledTransfer',
+                          },
+                        },
+                      }),
+                    );
+                    return;
+                  }
+                }
+                await onConfirmSave();
+              }, [isAdding, dispatch, navigate, onSave, unserializedTransactions, t, draftReceipts]);"""
+          p.write_text(text[:start] + save + text[end:])
+          edit(
+              tx,
+              "    const onSchedule = useCallback(async () => {\n      const [unserializedTransaction] = unserializedTransactions;",
+              """    const onSchedule = useCallback(async () => {
+                if (draftReceipts.length > 0) {
+                  dispatch(
+                    addNotification({
+                      notification: {
+                        type: 'error',
+                        message: t('Save the transaction to attach the selected receipts.', {
+                          defaultValue: 'Speichere die Buchung, um die ausgewählten Belege anzuhängen.',
+                        }),
+                      },
+                    }),
+                  );
+                  return;
+                }
+                const [unserializedTransaction] = unserializedTransactions;""",
+          )
+          edit(
+              tx,
+              "      upcomingLength,\n      t,\n    ]);",
+              "      upcomingLength,\n      t,\n      draftReceipts,\n    ]);",
+          )
+          edit(
+              tx,
+              "          <NoteTagAutocomplete inputRef={noteRef} />\n        </View>\n\n        <View style={{ alignItems: 'center' }}>",
+              """          <NoteTagAutocomplete inputRef={noteRef} />
+                    {isAdding ? (
+                      <DraftReceiptPicker files={draftReceipts} onChange={setDraftReceipts} />
+                    ) : (
+                      <Button
+                        style={{ minHeight: 44, width: '100%' }}
+                        onPress={() =>
+                          dispatch(
+                            pushModal({
+                              modal: {
+                                name: 'transaction-receipts',
+                                options: { transactionId: transaction.parent_id || transaction.id },
+                              },
+                            }),
+                          )
+                        }
+                      >
+                        <Trans defaults="Belege zur Buchung">Transaction receipts</Trans>
+                      </Button>
+                    )}
+                  </View>
+
+                  <View style={{ alignItems: 'center' }}>""",
+          )
+          PY
+          git add -A
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Port Puh receipt upload and AG reports to current Actual"
+          git commit -m "Port receipt uploads to current Actual"
           git push origin HEAD:puh/receipt-upload-latest
