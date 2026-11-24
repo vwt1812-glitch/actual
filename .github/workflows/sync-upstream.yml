@@ -38,6 +38,7 @@ jobs:
         run: |
           git fetch origin puh/receipt-upload
           git checkout -B puh/receipt-upload origin/puh/receipt-upload
+          git reset --hard origin/puh/receipt-upload
           if ! git merge-base --is-ancestor upstream/master HEAD; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
