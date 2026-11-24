@@ -1,0 +1,29 @@
+name: Port receipt upload to current Actual
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  port:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply custom features to current upstream
+        run: |
+          git remote add upstream https://github.com/actualbudget/actual.git
+          git fetch upstream master
+          git fetch origin puh/receipt-upload
+          git checkout --force -B port-upstream upstream/master
+          git diff --binary 2bebdbaae0b701120a8cad9d56aafd64fa04c577 origin/puh/receipt-upload > "$RUNNER_TEMP/puh-custom.patch"
+          git apply --3way --index "$RUNNER_TEMP/puh-custom.patch"
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Port Puh receipt upload and AG reports to current Actual"
+          git push origin HEAD:puh/receipt-upload-latest
