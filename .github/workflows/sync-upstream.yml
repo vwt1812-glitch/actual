@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Merge upstream updates
+      - name: Merge upstream into master
         run: |
           git remote add upstream https://github.com/actualbudget/actual.git
           git fetch upstream master
@@ -28,5 +28,15 @@ jobs:
             git merge --no-edit upstream/master
             git push origin HEAD:master
           else
-            echo "Fork is already up to date."
+            echo "master is already up to date."
+          fi
+      - name: Merge upstream into receipt-upload branch
+        run: |
+          git fetch origin puh/receipt-upload
+          git checkout -B puh/receipt-upload origin/puh/receipt-upload
+          if ! git merge-base --is-ancestor upstream/master HEAD; then
+            git merge --no-edit upstream/master
+            git push origin HEAD:puh/receipt-upload
+          else
+            echo "puh/receipt-upload is already up to date."
           fi
