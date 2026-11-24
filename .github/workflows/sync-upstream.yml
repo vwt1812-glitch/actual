@@ -1,0 +1,28 @@
+name: Sync upstream Actual
+
+on:
+  schedule:
+    - cron: "11 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fast-forward from actualbudget/actual
+        run: |
+          git remote add upstream https://github.com/actualbudget/actual.git
+          git fetch upstream master
+          git merge --ff-only upstream/master
+          git push origin HEAD:master
