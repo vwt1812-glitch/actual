@@ -1,6 +1,8 @@
 name: Port receipt upload to current Actual
 
 on:
+  push:
+    branches: [master]
   workflow_dispatch:
 
 permissions:
