@@ -47,7 +47,15 @@ export type Modal =
       options: { fileId: string; apiKey?: ApiKey; onChange: () => void };
     }
   | {
-      name: 'import-transactions';
+        name: 'transaction-receipts';
+        options: {
+          transactionId: string;
+          initialFiles?: globalThis.File[];
+          onClose?: () => void;
+        };
+      }
+      | {
+          name: 'import-transactions';
       options: {
         accountId: string;
         filename: string;

@@ -17,6 +17,7 @@ import * as enableBankingApp from './app-enablebanking/app-enablebanking';
 import * as goCardlessApp from './app-gocardless/app-gocardless';
 import * as openidApp from './app-openid';
 import * as pluggai from './app-pluggyai/app-pluggyai';
+import * as receiptsApp from './app-receipts';
 import * as secretApp from './app-secrets';
 import * as simpleFinApp from './app-simplefin/app-simplefin';
 import * as syncApp from './app-sync';
@@ -46,6 +47,7 @@ if (process.env.NODE_ENV !== 'development') {
   );
 }
 
+app.use('/receipts', receiptsApp.handlers);
 app.use(express.json({ limit: `${config.get('upload.fileSizeLimitMB')}mb` }));
 
 app.use(
@@ -240,3 +242,4 @@ export async function run() {
     );
   }
 }
+

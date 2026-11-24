@@ -45,6 +45,7 @@ export function PageHeader({ title, style }: PageHeaderProps) {
 
 type MobilePageHeaderProps = {
   title: ReactNode;
+  wideTitle?: boolean;
   style?: CSSProperties;
   leftContent?: ReactNode;
   rightContent?: ReactNode;
@@ -52,6 +53,7 @@ type MobilePageHeaderProps = {
 
 export function MobilePageHeader({
   title,
+  wideTitle = false,
   style,
   leftContent,
   rightContent,
@@ -70,6 +72,7 @@ export function MobilePageHeader({
         '& *': {
           color: theme.mobileHeaderText,
         },
+        '& button': { minWidth: 44, minHeight: 44 },
         '& button[data-pressed]': {
           // oxlint-disable-next-line actual/theme-token-roles
           backgroundColor: theme.mobileHeaderTextHover,
@@ -92,7 +95,7 @@ export function MobilePageHeader({
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
-          flexBasis: '50%',
+          flexBasis: wideTitle ? '75%' : '50%',
           fontSize: 17,
           fontWeight: 500,
           overflowY: 'auto',
@@ -105,7 +108,7 @@ export function MobilePageHeader({
       </h1>
       <View
         style={{
-          flexBasis: '25%',
+          flexBasis: wideTitle ? '0%' : '25%',
           justifyContent: 'flex-end',
           flexDirection: 'row',
         }}
@@ -230,3 +233,4 @@ export function Page({ header, style, padding, children, footer }: PageProps) {
     </View>
   );
 }
+

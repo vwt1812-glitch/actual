@@ -187,6 +187,22 @@ export function useTransactionRowContextActions({
 
   const transactionActions: ContextMenuItem[] = [
     {
+      name: 'transaction-receipts',
+      text: t('Transaction receipts', { defaultValue: 'Belege zur Buchung' }),
+      onClick: () =>
+        dispatch(
+          pushModal({
+            modal: {
+              name: 'transaction-receipts',
+              options: {
+                transactionId: transaction.parent_id || transaction.id,
+              },
+            },
+          }),
+        ),
+      hidden: selectedIds.length !== 1 || types.preview,
+    },
+    {
       name: 'duplicate',
       text: t('Duplicate'),
       onClick: () => onDuplicate(selectedIds),
@@ -236,3 +252,4 @@ export function useTransactionRowContextActions({
     items: types.trans ? transactionActions : scheduleActions,
   });
 }
+

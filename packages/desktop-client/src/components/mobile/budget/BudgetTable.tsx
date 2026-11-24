@@ -346,11 +346,11 @@ export function BudgetTable({
   onEditCategory,
 }: BudgetTableProps) {
   const { width } = useResponsive();
-  const show3Columns = width >= 300;
+  const show3Columns = width >= 480;
 
   // let editMode = false; // neuter editMode -- sorry, not rewriting drag-n-drop right now
 
-  const [showSpentColumn = false, setShowSpentColumnPref] = useLocalPref(
+  const [showSpentColumn = true, setShowSpentColumnPref] = useLocalPref(
     'mobile.showSpentColumn',
   );
 
@@ -381,7 +381,7 @@ export function BudgetTable({
           style={{
             backgroundColor: theme.pageBackground,
             minHeight: '100vh',
-            paddingBottom: MOBILE_NAV_HEIGHT,
+            paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
           }}
         >
           <SchedulesProvider query={schedulesQuery}>
@@ -659,3 +659,4 @@ function BudgetTableHeader({
     </View>
   );
 }
+

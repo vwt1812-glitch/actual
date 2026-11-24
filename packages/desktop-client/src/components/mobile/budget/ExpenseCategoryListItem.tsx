@@ -69,6 +69,9 @@ function ExpenseCategoryName({
         variant="bare"
         style={{
           maxWidth: sidebarColumnWidth,
+          minHeight: 44,
+          paddingLeft: 4,
+          paddingRight: 4,
         }}
         onPress={() => onEditCategory?.(category.id)}
       >
@@ -82,7 +85,7 @@ function ExpenseCategoryName({
           <Text
             style={{
               ...styles.lineClamp(2),
-              width: sidebarColumnWidth,
+              width: `calc(${sidebarColumnWidth} - 28px)`,
               textAlign: 'left',
               ...styles.smallText,
             }}
@@ -488,3 +491,4 @@ export function ExpenseCategoryListItem({
     </GridListItem>
   );
 }
+

@@ -56,7 +56,7 @@ export function NotificationsPage() {
           gap: 30,
           // Keeps lines of text to a comfortable reading length.
           maxWidth: 800,
-          paddingBottom: MOBILE_NAV_HEIGHT,
+          paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
         }}
       >
         {isLoading && (
@@ -141,3 +141,4 @@ export function NotificationsPage() {
     </Page>
   );
 }
+

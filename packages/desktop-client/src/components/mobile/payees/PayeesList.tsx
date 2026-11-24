@@ -79,7 +79,7 @@ export function PayeesList({
           items={payees}
           style={{
             flex: 1,
-            paddingBottom: MOBILE_NAV_HEIGHT,
+            paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
             overflow: 'auto',
           }}
           dependencies={[ruleCounts, isRuleCountsLoading]}
@@ -109,3 +109,4 @@ export function PayeesList({
     </View>
   );
 }
+

@@ -149,6 +149,10 @@ import {
 } from '#util/schedule-actions';
 
 import {
+  ReceiptStatusProvider,
+  TransactionReceiptStatus,
+} from './ReceiptStatus';
+import {
   isTransactionTableColumnAvailableInChildRows,
   isTransactionTableColumnDisplayOnly,
   TRANSACTION_TABLE_COLUMN_IDS,
@@ -404,6 +408,9 @@ const TransactionHeader = memo(
             />
           );
         })}
+        <Field style={{ width: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <Trans i18nKey="Receipt column">Beleg</Trans>
+        </Field>
       </Row>
     );
   },
@@ -2198,7 +2205,10 @@ const Transaction = memo(function Transaction({
         {selectionCell}
         {columns.slice(selectionCellIndex).map(renderColumnCell)}
 
-        <Cell width={5} />
+        <Field style={{ width: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}>
+        <TransactionReceiptStatus transaction={transaction} />
+      </Field>
+              <Cell width={5} />
       </Row>
       <DragPreview ref={previewRef}>
         {() => (
@@ -4119,7 +4129,8 @@ export const TransactionTable = forwardRef(
     const allSchedulesQuery = useMemo(() => q('schedules').select('*'), []);
 
     return (
-      <DisplayPayeeProvider transactions={displayPayeeTransactions}>
+      <ReceiptStatusProvider>
+        <DisplayPayeeProvider transactions={displayPayeeTransactions}>
         <SchedulesProvider query={allSchedulesQuery}>
           <TransactionTableInner
             tableRef={mergedRef}
@@ -4165,7 +4176,8 @@ export const TransactionTable = forwardRef(
             onDrop={onDrop}
           />
         </SchedulesProvider>
-      </DisplayPayeeProvider>
+        </DisplayPayeeProvider>
+      </ReceiptStatusProvider>
     );
   },
 );

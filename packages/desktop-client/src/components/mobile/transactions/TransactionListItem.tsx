@@ -32,6 +32,7 @@ import {
 
 import { makeAmountFullStyle } from '#components/budget/util';
 import { TransferDirectionIcon } from '#components/common/TransferDirectionIcon';
+import { TransactionReceiptStatus } from '#components/transactions/ReceiptStatus';
 import { useAccount } from '#hooks/useAccount';
 import { useCachedSchedules } from '#hooks/useCachedSchedules';
 import { useCategories } from '#hooks/useCategories';
@@ -42,7 +43,7 @@ import { useSelector } from '#redux';
 
 import { lookupName, Status } from './TransactionEdit';
 
-export const ROW_HEIGHT = 60;
+export const ROW_HEIGHT = 76;
 
 const getTextStyle = ({
   isPreview,
@@ -211,7 +212,7 @@ export function TransactionListItem({
               padding: isReconciling ? '0 0 0 4px' : '0 4px',
             }}
           >
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <PayeeIcons
                   transaction={transaction}
@@ -307,7 +308,14 @@ export function TransactionListItem({
                 </TextOneLine>
               )}
             </View>
-            <View style={{ justifyContent: 'center', alignItems: 'flex-end' }}>
+            <View
+              style={{
+                justifyContent: 'center',
+                alignItems: 'flex-end',
+                gap: 3,
+                flexShrink: 0,
+              }}
+            >
               <Text
                 style={{
                   ...styles.tnum,
@@ -321,6 +329,7 @@ export function TransactionListItem({
               >
                 {integerToCurrency(amount)}
               </Text>
+              <TransactionReceiptStatus transaction={transaction} showLabel />
               {showRunningBalance && runningBalance !== undefined && (
                 <Text
                   style={{
@@ -346,7 +355,7 @@ export function TransactionListItem({
         (isChild ? (
           <View
             style={{
-              width: 32,
+              width: 44,
               flexShrink: 0,
               justifyContent: 'center',
               alignItems: 'center',
@@ -368,7 +377,7 @@ export function TransactionListItem({
                   : t('Clear transaction')
             }
             style={{
-              width: 32,
+              width: 44,
               height: '100%',
               flexShrink: 0,
               borderRadius: 0,
@@ -451,3 +460,4 @@ function PayeeIcons({ transaction, transferAccount }: PayeeIconsProps) {
     </>
   );
 }
+

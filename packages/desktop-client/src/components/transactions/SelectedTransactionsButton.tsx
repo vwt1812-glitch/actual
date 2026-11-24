@@ -326,6 +326,13 @@ export function SelectedTransactionsButton({
           : [
               { name: 'show', text: t('Show'), key: 'F' } as const,
               {
+                name: 'transaction-receipts',
+                text: t('Transaction receipts', {
+                  defaultValue: 'Belege zur Buchung',
+                }),
+                disabled: selectedIds.length !== 1 || types.preview,
+              } as const,
+              {
                 name: 'duplicate',
                 text: t('Duplicate'),
                 key: 'U',
@@ -411,6 +418,22 @@ export function SelectedTransactionsButton({
       ]}
       onSelect={name => {
         switch (name) {
+          case 'transaction-receipts': {
+            const transaction = getTransaction(selectedIds[0]);
+            if (transaction) {
+              dispatch(
+                pushModal({
+                  modal: {
+                    name: 'transaction-receipts',
+                    options: {
+                      transactionId: transaction.parent_id || transaction.id,
+                    },
+                  },
+                }),
+              );
+            }
+            break;
+          }
           case 'show':
             onShow(selectedIds);
             break;
@@ -461,3 +484,4 @@ export function SelectedTransactionsButton({
     />
   );
 }
+

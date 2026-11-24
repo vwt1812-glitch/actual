@@ -540,6 +540,7 @@ export function BudgetPage() {
       padding={0}
       header={
         <MobilePageHeader
+          wideTitle
           title={
             <MonthSelector
               month={startMonth}
@@ -1022,3 +1023,4 @@ function MonthSelector({
     </View>
   );
 }
+

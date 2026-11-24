@@ -78,7 +78,7 @@ export function RulesList({
           aria-busy={isLoading || undefined}
           items={rules}
           style={{
-            paddingBottom: MOBILE_NAV_HEIGHT,
+            paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
           }}
         >
           {rule => (
@@ -103,3 +103,4 @@ export function RulesList({
     </View>
   );
 }
+

@@ -1,0 +1,56 @@
+services:
+  year-close:
+    image: ag-budget-reporting:local
+    build: .
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: Europe/Berlin
+    volumes:
+      - ./config.cjs:/app/config.cjs:ro
+      - ./data:/data
+      - ${ACTUAL_PASSWORD_PATH:-./actual-password}:/run/secrets/actual_password:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+  report-web-ui:
+    image: ag-budget-reporting:local
+    build: .
+    command: ["node", "web-ui.cjs"]
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: Europe/Berlin
+      REPORT_WEB_HOST: 127.0.0.1
+      REPORT_WEB_PORT: "5008"
+      ACTUAL_RECEIPT_ROOT: /receipts
+      REPORT_OUTPUT_DIR: /reports
+      REPORT_OWNER_UID: "1000"
+      REPORT_OWNER_GID: "1000"
+    volumes:
+      - ./config.cjs:/app/config.cjs:ro
+      - ./data:/data
+      - ./reports:/reports
+      - ${ACTUAL_PASSWORD_PATH:-./actual-password}:/run/secrets/actual_password:ro
+      - ${ACTUAL_RECEIPTS_PATH:-./receipts}:/receipts:ro
+  reporter:
+    image: ag-budget-reporting:local
+    build: .
+    profiles: ["cli"]
+    entrypoint: ["node", "report.cjs"]
+    network_mode: host
+    environment:
+      TZ: Europe/Berlin
+      ACTUAL_RECEIPT_ROOT: /receipts
+      REPORT_OUTPUT_DIR: /reports
+      REPORT_OWNER_UID: "1000"
+      REPORT_OWNER_GID: "1000"
+    volumes:
+      - ./config.cjs:/app/config.cjs:ro
+      - ./data:/data
+      - ./reports:/reports
+      - ${ACTUAL_PASSWORD_PATH:-./actual-password}:/run/secrets/actual_password:ro
+      - ${ACTUAL_RECEIPTS_PATH:-./receipts}:/receipts:ro
+

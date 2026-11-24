@@ -82,6 +82,7 @@ import {
 } from '#components/mobile/MobileForms';
 import { getPrettyPayee } from '#components/mobile/utils';
 import { MobilePageHeader, Page } from '#components/Page';
+import { DraftReceiptPicker } from '#components/transactions/DraftReceiptPicker';
 import {
   propagateRuleChangeToSubtransactions,
   transactionForRulesFromList,
@@ -570,6 +571,25 @@ const ChildTransactionEdit = forwardRef<
             onUpdate={value => onUpdate(transaction, 'notes', value)}
           />
           <NoteTagAutocomplete inputRef={noteRef} />
+          {isAdding ? (
+            <DraftReceiptPicker files={draftReceipts} onChange={setDraftReceipts} />
+          ) : (
+            <Button
+              style={{ minHeight: 44, width: '100%' }}
+              onPress={() =>
+                dispatch(
+                  pushModal({
+                    modal: {
+                      name: 'transaction-receipts',
+                      options: { transactionId: transaction.parent_id || transaction.id },
+                    },
+                  }),
+                )
+              }
+            >
+              <Trans defaults="Belege zur Buchung">Transaction receipts</Trans>
+            </Button>
+          )}
         </View>
 
         <View style={{ alignItems: 'center' }}>
@@ -615,7 +635,7 @@ type TransactionEditInnerProps = {
   payees: PayeeEntity[];
   dateFormat: string;
   transactions: TransactionEntity[];
-  onSave: (transactions: TransactionEntity[]) => void;
+  onSave: (transactions: TransactionEntity[]) => Promise<void>;
   onUpdate: <Field extends keyof TransactionEntity>(
     transaction: TransactionEntity,
     field: Field,
@@ -653,6 +673,9 @@ const TransactionEditInner = memo<TransactionEditInnerProps>(
     const { t } = useTranslation();
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const [draftReceipts, setDraftReceipts] = useState<File[]>([]);
+    const saving = useRef(false);
+    const saved = useRef(false);
     const [showHiddenCategories] = useLocalPref('budget.showHiddenCategories');
     const [upcomingLength = DEFAULT_UPCOMING_SCHEDULE_DAYS] = useSyncedPref(
       'upcomingScheduledTransactionLength',
@@ -737,70 +760,108 @@ const TransactionEditInner = memo<TransactionEditInnerProps>(
     );
 
     const onSaveInner = useCallback(async () => {
-      const onConfirmSave = () => {
-        let transactionsToSave = unserializedTransactions;
-        if (isAdding) {
-          transactionsToSave = realizeTempTransactions(
-            unserializedTransactions,
-          );
-        }
-
-        onSave(transactionsToSave);
-        void navigate(-1);
-      };
-
-      if (unserializedTransactions.some(t => t.reconciled)) {
-        // On mobile any save gives the warning.
-        // On the web only certain changes trigger a warning.
-        // Should we bring that here as well? Or does the nature of the editing form
-        // make this more appropriate?
-        dispatch(
-          pushModal({
-            modal: {
-              name: 'confirm-transaction-edit',
-              options: {
-                onConfirm: onConfirmSave,
-                confirmReason: 'editReconciled',
-              },
-            },
-          }),
-        );
-      } else {
-        const transferIds = unserializedTransactions
-          .map(t => t.transfer_id)
-          .filter((id): id is string => id != null);
-
-        if (transferIds.length > 0) {
-          const { data } = await aqlQuery(
-            q('transactions')
-              .filter({
-                id: { $oneof: transferIds },
-                reconciled: true,
-              })
-              .select('id'),
-          );
-          if ((data as TransactionEntity[]).length > 0) {
+      const onConfirmSave = async () => {
+        if (saving.current) return;
+        saving.current = true;
+        try {
+          let transactionsToSave = unserializedTransactions;
+          if (isAdding) {
+            transactionsToSave = realizeTempTransactions(unserializedTransactions);
+          }
+          await onSave(transactionsToSave);
+          saved.current = true;
+          const firstTransaction = transactionsToSave[0];
+          if (draftReceipts.length > 0 && firstTransaction) {
             dispatch(
               pushModal({
                 modal: {
-                  name: 'confirm-transaction-edit',
+                  name: 'transaction-receipts',
                   options: {
-                    onConfirm: onConfirmSave,
-                    confirmReason: 'batchEditWithReconciledTransfer',
+                    transactionId: firstTransaction.parent_id || firstTransaction.id,
+                    initialFiles: draftReceipts,
+                    onClose: () => void navigate(-1),
                   },
                 },
               }),
             );
           } else {
-            onConfirmSave();
+            void navigate(-1);
           }
-        } else {
-          onConfirmSave();
+        } catch {
+          dispatch(
+            addNotification({
+              notification: {
+                type: 'error',
+                message: t('The transaction could not be saved. Please try again.', {
+                  defaultValue: 'Die Buchung konnte nicht gespeichert werden. Bitte versuche es erneut.',
+                }),
+              },
+            }),
+          );
+        } finally {
+          if (!saved.current) saving.current = false;
+        }
+      };
+
+      if (unserializedTransactions.some(t => t.reconciled)) {
+        dispatch(
+          pushModal({
+            modal: {
+              name: 'confirm-transaction-edit',
+              options: {
+                onConfirm: () => void onConfirmSave(),
+                confirmReason: 'editReconciled',
+              },
+            },
+          }),
+        );
+        return;
+      }
+
+      const transferIds = unserializedTransactions
+        .map(t => t.transfer_id)
+        .filter((id): id is string => id != null);
+      if (transferIds.length > 0) {
+        const { data } = await aqlQuery(
+          q('transactions')
+            .filter({
+              id: { $oneof: transferIds },
+              reconciled: true,
+            })
+            .select('id'),
+        );
+        if ((data as TransactionEntity[]).length > 0) {
+          dispatch(
+            pushModal({
+              modal: {
+                name: 'confirm-transaction-edit',
+                options: {
+                  onConfirm: () => void onConfirmSave(),
+                  confirmReason: 'batchEditWithReconciledTransfer',
+                },
+              },
+            }),
+          );
+          return;
         }
       }
-    }, [isAdding, dispatch, navigate, onSave, unserializedTransactions]);
+      await onConfirmSave();
+    }, [isAdding, dispatch, navigate, onSave, unserializedTransactions, t, draftReceipts]);
 
     const onSchedule = useCallback(async () => {
+      if (draftReceipts.length > 0) {
+        dispatch(
+          addNotification({
+            notification: {
+              type: 'error',
+              message: t('Save the transaction to attach the selected receipts.', {
+                defaultValue: 'Speichere die Buchung, um die ausgewählten Belege anzuhängen.',
+              }),
+            },
+          }),
+        );
+        return;
+      }
       const [unserializedTransaction] = unserializedTransactions;
 
       if (!unserializedTransaction.account) {
@@ -906,6 +967,7 @@ const TransactionEditInner = memo<TransactionEditInnerProps>(
       unserializedTransactions,
       upcomingLength,
       t,
+      draftReceipts,
     ]);
 
     const onUpdateInner = useCallback(

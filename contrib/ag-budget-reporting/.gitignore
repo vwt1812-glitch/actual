@@ -1,0 +1,7 @@
+config.cjs
+actual-password
+data/
+reports/
+receipts/
+*.zip
+

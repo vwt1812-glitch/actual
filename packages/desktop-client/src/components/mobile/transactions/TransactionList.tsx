@@ -40,6 +40,7 @@ import type {
 } from '@actual-app/core/types/models';
 
 import { FloatingActionBar } from '#components/mobile/FloatingActionBar';
+import { ReceiptStatusProvider } from '#components/transactions/ReceiptStatus';
 import { useAccounts } from '#hooks/useAccounts';
 import { useCategoriesById } from '#hooks/useCategories';
 import { useLocale } from '#hooks/useLocale';
@@ -161,7 +162,8 @@ export function TransactionList({
   );
 
   return (
-    <View style={{ flex: 1 }}>
+    <ReceiptStatusProvider>
+      <View style={{ flex: 1 }}>
       {isLoading && (
         <Loading
           style={{ flex: 'none', paddingBottom: 8 }}
@@ -279,7 +281,8 @@ export function TransactionList({
           showMakeTransfer={showMakeTransfer}
         />
       )}
-    </View>
+      </View>
+    </ReceiptStatusProvider>
   );
 }
 
