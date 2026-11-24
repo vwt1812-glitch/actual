@@ -42,6 +42,14 @@ export type ConfirmTransactionEditReason =
 
 export type Modal =
   | {
+      name: 'transaction-receipts';
+      options: {
+        transactionId: string;
+        initialFiles?: globalThis.File[];
+        onClose?: () => void;
+      };
+    }
+  | {
       name: 'import-transactions';
       options: {
         accountId: string;
@@ -802,3 +810,4 @@ export const actions = {
 
 export const { pushModal, closeModal, collapseModals, popModal, replaceModal } =
   actions;
+

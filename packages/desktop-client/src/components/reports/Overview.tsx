@@ -761,7 +761,10 @@ export function Overview({ dashboard }: OverviewProps) {
           <View
             data-testid="reports-overview"
             innerRef={containerRef}
-            style={{ userSelect: 'none', paddingBottom: MOBILE_NAV_HEIGHT }}
+            style={{
+              userSelect: 'none',
+              paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
+            }}
           >
             {isMounted && (
               <ReactGridLayout
@@ -945,3 +948,4 @@ export function Overview({ dashboard }: OverviewProps) {
     </Page>
   );
 }
+

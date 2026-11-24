@@ -235,6 +235,9 @@ function ExpenseGroupName({
         variant="bare"
         style={{
           maxWidth: sidebarColumnWidth,
+          minHeight: 44,
+          paddingLeft: 4,
+          paddingRight: 4,
         }}
         onPress={() => onEditCategoryGroup(group.id)}
       >
@@ -248,7 +251,7 @@ function ExpenseGroupName({
           <Text
             style={{
               ...styles.lineClamp(2),
-              width: sidebarColumnWidth,
+              width: `calc(${sidebarColumnWidth} - 28px)`,
               textAlign: 'left',
               ...styles.smallText,
               fontWeight: '500',
@@ -395,3 +398,4 @@ function ExpenseGroupCells({
     </View>
   );
 }
+

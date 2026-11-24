@@ -55,7 +55,11 @@ export function BankSyncAccountsList({
 
   return (
     <div
-      style={{ flex: 1, overflow: 'auto', paddingBottom: MOBILE_NAV_HEIGHT }}
+      style={{
+        flex: 1,
+        overflow: 'auto',
+        paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
+      }}
     >
       {groupedAccountEntries.map(([provider, accounts]) => (
         <div key={provider}>
@@ -97,3 +101,4 @@ export function BankSyncAccountsList({
     </div>
   );
 }
+

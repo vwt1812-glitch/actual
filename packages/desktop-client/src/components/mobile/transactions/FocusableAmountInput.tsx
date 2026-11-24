@@ -265,7 +265,9 @@ export const FocusableAmountInput = memo(function FocusableAmountInput({
             style={{
               position: 'absolute',
               right: 'calc(100% + 5px)',
-              top: '8px',
+              top: '2px',
+              minWidth: 44,
+              minHeight: 44,
             }}
             onPress={toggleIsNegative}
           >
@@ -316,3 +318,4 @@ export const FocusableAmountInput = memo(function FocusableAmountInput({
     </View>
   );
 });
+

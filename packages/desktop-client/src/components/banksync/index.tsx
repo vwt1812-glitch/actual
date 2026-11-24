@@ -90,7 +90,7 @@ export function BankSync() {
       style={{
         minHeight: 'initial',
         marginInline: floatingSidebar && !isNarrowWidth ? 'auto' : 0,
-        paddingBottom: MOBILE_NAV_HEIGHT,
+        paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
       }}
     >
       <View style={{ marginTop: '1em', gap: 24 }}>
@@ -137,3 +137,4 @@ export function BankSync() {
     </Page>
   );
 }
+

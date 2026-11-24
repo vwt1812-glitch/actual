@@ -44,7 +44,8 @@ const valueStyle = {
   borderColor: theme.formInputBorder,
   marginLeft: 8,
   marginRight: 8,
-  height: styles.mobileMinHeight,
+  height: Math.max(44, styles.mobileMinHeight),
+  fontSize: 16,
 };
 
 export const hideNativeDateIconClassName = css({
@@ -143,6 +144,8 @@ export function InputField({
             border: 'none',
             backgroundColor: 'transparent',
             height: '100%',
+            fontSize: 16,
+            minWidth: 0,
             padding: 0,
             textAlign: 'left',
             color: disabled ? theme.tableTextInactive : theme.tableText,
@@ -313,3 +316,4 @@ export function ToggleField({
     />
   );
 }
+

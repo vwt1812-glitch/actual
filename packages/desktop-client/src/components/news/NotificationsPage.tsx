@@ -48,7 +48,7 @@ export function NotificationsPage() {
           flexShrink: 0,
           gap: 30,
           maxWidth: 800,
-          paddingBottom: MOBILE_NAV_HEIGHT,
+          paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
         }}
       >
         <View
@@ -116,3 +116,4 @@ export function NotificationsPage() {
     </Page>
   );
 }
+

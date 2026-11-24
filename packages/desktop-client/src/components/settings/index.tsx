@@ -109,7 +109,7 @@ function About() {
           </Link>
           {isNewsFeedEnabled && (
             <>
-              {' · '}
+              {' � '}
               <Link variant="internal" to="/notifications">
                 <Trans>Notifications</Trans>
               </Link>
@@ -230,7 +230,7 @@ export function Settings() {
           maxWidth: 530,
           width: '100%',
           gap: 30,
-          paddingBottom: MOBILE_NAV_HEIGHT,
+          paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
         }}
       >
         {isNarrowWidth && (
@@ -277,3 +277,4 @@ export function Settings() {
     </Page>
   );
 }
+

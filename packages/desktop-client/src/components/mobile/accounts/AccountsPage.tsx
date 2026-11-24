@@ -364,7 +364,9 @@ function AllAccountList({
         <PullToRefresh onRefresh={onSync}>
           <View
             aria-label={t('Account list')}
-            style={{ paddingBottom: MOBILE_NAV_HEIGHT }}
+            style={{
+              paddingBottom: `calc(${MOBILE_NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
+            }}
           >
             <AccountHeader
               id={ALL_ACCOUNTS_ID}
@@ -602,3 +604,4 @@ export function AccountsPage() {
     </View>
   );
 }
+
